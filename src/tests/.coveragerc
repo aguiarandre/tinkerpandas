@@ -1,0 +1,21 @@
+
+[run]
+source = ../
+branch  = True
+
+[tool:pytest]
+addopts = --cov-report html
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    if __name__ == .__main__.:
+
+[html]
+directory = build/coverage.html
+
+[xml]
+output = build/coverage.xml

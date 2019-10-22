@@ -20,6 +20,10 @@ from gremlin_python.process.traversal import WithOptions
 
 statics.load_statics(globals())
 
+# The pattern of name creation is:
+#    - if the method is exposed to the user, use Python's PEP8 pattern (snake_case)
+#    - if it is an internal method, use the JAVA-related Tinkerpop pattern (camelCase)
+
 class TinkerFactory(object):
         
     def __init__(self, graph = None, port = 8182):
@@ -36,10 +40,6 @@ class TinkerFactory(object):
         
         return
     
-    # The pattern of name creation is:
-    #    - if the method is exposed to the user, use Python's PEP8 pattern (snake_case)
-    #    - if it is an internal method, use the JAVA-related Tinkerpop pattern (camelCase)
-    
     def createModern(self, drop = True):
         '''
         Generate an example graph.
@@ -55,18 +55,18 @@ class TinkerFactory(object):
         if drop:
             self.drop_vertices()
         
-        self.g.addV().property('name','marko').as_('a').\
-               addV().property('name','lop').as_('b').\
-               addV().property('name','josh').as_('c').\
-               addV().property('name','ripple').as_('d').\
-               addV().property('name','peter').as_('e').\
-               addV().property('name','vadas').as_('f').\
-               addE('knows').from_('a').to('f').\
-               addE('knows').from_('a').to('c').\
-               addE('created').from_('a').to('b').\
-               addE('created').from_('c').to('b').\
-               addE('created').from_('e').to('b').\
-               addE('created').from_('c').to('d').iterate()
+        self.g.addV().property('age', 29).property('name','marko').as_('a').\
+               addV().property('lang', 'java').property('name','lop').as_('b').\
+               addV().property('age', 32).property('name','josh').as_('c').\
+               addV().property('lang', 'java').property('name','ripple').as_('d').\
+               addV().property('age', 35).property('name','peter').as_('e').\
+               addV().property('age', 27).property('name','vadas').as_('f').\
+               addE('knows').from_('a').to('f').property('weight', 0.5).\
+               addE('knows').from_('a').to('c').property('weight', 1.0).\
+               addE('created').from_('a').to('b').property('weight', 0.4).\
+               addE('created').from_('c').to('b').property('weight', 0.4).\
+               addE('created').from_('e').to('b').property('weight', 0.2).\
+               addE('created').from_('c').to('d').property('weight', 1.0).iterate()
         
         return self.g 
 
@@ -83,3 +83,23 @@ class TinkerFactory(object):
             self.g.V().drop().iterate()
         except:
             self.logger.warning('Could not drop vetices of graph g')
+
+
+    def addV_from_pandas(self, dataframe, src = 'src', v_properties = ['age']):
+        '''
+        Create a graph given a dataframe 
+        '''
+
+        self._connect()
+        self.drop_vertices()
+
+        n_properties = len(v_properties)
+        comb = []
+        for i, value in dataframe.iterrows():
+            vertex = f'.addV("{value[src]}")'
+            properties = ''.join([f'.property("{pr}", {repr(value[pr])})' for pr in v_properties])
+            comb.append(''.join([vertex, properties,]))
+        execution_string = 'self.g' + '\\\n'.join(comb) + '.iterate()'
+        exec(execution_string, globals())
+
+        return self.g
